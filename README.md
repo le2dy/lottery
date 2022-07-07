@@ -1,6 +1,6 @@
 # lottery
 Random lottery number generator.
 
-##Poker
+## Poker
 Actually, this is not a poker.
 This is a One-card, maybe.
