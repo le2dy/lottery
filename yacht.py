@@ -41,10 +41,6 @@ def CLI():
     else:
       roll_dices()
   elif cmd.__eq__('record'):
-    if chance == 0:
-      print("You have no more chance to reroll.")
-      CLI()
-      return
     if chance == 3:
       print("You can't do that.")
       CLI()
@@ -54,6 +50,10 @@ def CLI():
       print(str(i + 1)+'. ' + category[i])
     print('13. Back')
   elif cmd.__eq__('hold'):
+    if chance == 0:
+      print("You have no more chance to reroll.")
+      CLI()
+      return
     print(dice_fixed)
     msg = input('Choose the dices.\n> ')
     choosen = msg.split(' ')
