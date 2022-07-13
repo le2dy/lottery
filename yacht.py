@@ -103,7 +103,7 @@ def choose_option(cmd):
         count = [key for key, _ in Counter(dices).most_common(2)]
         v = Counter(dices).get(count[0])
         v2 = Counter(dices).get(count[1])
-        if v >= 3 or v2 >= 2:
+        if (v == 3 and v2 == 2) or v == 5:
             score = (int(count[0]) * int(v)) + (int(count[1]) * int(v2))
     elif cmd.__eq__('10'):
         print('a')
