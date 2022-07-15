@@ -1,6 +1,17 @@
-import re
+a = [[10], [0], [-123]]
+b = a[0][0] + a[2][0]
+d = [10, 1, 2, 1, 5, 6]
 
-a = 'sadasdsaada123asdsadsadasd'
+c = ['asd', 'qwe', 'asd']
 
-print(a.replace('123.*', ''))
-print(re.sub('123*', '', a))
+print(d[0] + d[2])
+d.insert(1, 12383810)
+print(d)
+
+print(sum(d))
+
+indices = [i for i, x in enumerate(c) if x == 'asd']
+
+print(indices)
+
+print(b)

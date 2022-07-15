@@ -16,7 +16,7 @@ chips = []
 bet_chips = []
 minimum_bet_price = 0
 turn = 0
-round = 1
+stage = 1
 set_a = 1
 
 
@@ -98,7 +98,7 @@ def distribute():
 
 def show_table(isHide):
     os.system('clear')
-    print("[Table] Round:" + str(round) + " Cards left: " + str(len(deck)))
+    print("[Table] Round:" + str(stage) + " Cards left: " + str(len(deck)))
 
     emp = '          '
     length = int((len(emp) - len(str(dealers_point))) / 2)
@@ -128,11 +128,23 @@ def player_action():
         sleep(2)
         set_turn()
     else:
-        print(players[turn] + "'s turn (chip left: " + str(chips[turn] - bet_chips[turn]) + ", Point: " + str(
-        point_list[turn]) + ")")
+        total = 0
+        if players.count(players[turn]) >= 2:
+            indices = [i for i, x in enumerate(players) if x == players[turn]]
+            for i in indices:
+                total += bet_chips[i]
+        else:
+            total = bet_chips[turn]
+        print(players[turn] + "'s turn (chip left: " + str(chips[turn] - total) + ", Point: " + str(
+            point_list[turn]) + ")")
 
     for i in range(len(commands)):
-        print(str(i + 1) + '. ' + commands[i])
+        if i < 3:
+            emp = '                 '
+            msg = str(i + 1) + '. ' + commands[i]
+            msg2 = str(i + 5) + '. ' + commands[i + 4]
+            print(msg + ' ' * (len(emp) - len(msg)) + msg2)
+    print(str(4) + '. ' + commands[3])
 
     cmd = input('> ')
 
@@ -140,7 +152,7 @@ def player_action():
         if str(point_list[turn]).__eq__('bust'):
             player_action()
             return
-        add_card()
+        add_card(turn)
     elif cmd.__eq__('2') or cmd.lower().__eq__('stand'):
         set_turn()
     elif cmd.__eq__('3') or cmd.lower().__eq__('double down'):
@@ -148,18 +160,23 @@ def player_action():
             player_action()
             return
         elif chips[turn] < bet_chips[turn] * 2:
-            print("You don't have enought money.")
+            print("You don't have enough money.")
             player_action()
             return
-        add_card()
+        add_card(turn)
         bet_chips[turn] *= 2
     elif cmd.__eq__('4') or cmd.lower().__eq__('split'):
         if str(point_list[turn]).__eq__('bust'):
             player_action()
             return
-        print("coming soon")
+        if chips[turn] - bet_chips[turn] < bet_chips[turn]:
+            print("You don't have enough money.")
+            player_action()
+            return
+        if len(player_hands[turn]) == 2 and player_hands[turn][0].__eq__(player_hands[turn][1]):
+            split()
     elif cmd.__eq__('5') or cmd.lower().__eq__('surrender'):
-        if round == 0:
+        if stage == 0:
             print('coming soon')
         else:
             print("You can't surrender.")
@@ -183,6 +200,17 @@ def player_action():
     player_action()
 
 
+def split():
+    players.insert(turn + 1, players[turn])
+    player_hands.insert(turn + 1, [])
+    player_hands[turn + 1].append(player_hands[turn].pop())
+    bet_chips.insert(turn + 1, bet_chips[turn])
+    point_list.insert(turn + 1, 0)
+    chips.insert(turn + 1, chips[turn])
+    add_card(turn)
+    add_card(turn + 1)
+
+
 def set_A():
     global set_a
 
@@ -196,16 +224,16 @@ def set_A():
     player_action()
 
 
-def add_card():
-    player_hands[turn].append(deck.pop())
+def add_card(hand):
+    player_hands[hand].append(deck.pop())
 
-    point_list[turn] = count_point(player_hands[turn])
+    point_list[hand] = count_point(player_hands[hand])
 
 
-def count_point(deck):
+def count_point(hand):
     point = 0
 
-    for card in deck:
+    for card in hand:
         if card[:len(card) - 1].__eq__('A'):
             point += 1
         elif card[:len(card) - 1].__eq__('J') or card[:len(card) - 1].__eq__('Q') or card[:len(card) - 1].__eq__('K'):
@@ -223,7 +251,7 @@ def count_point(deck):
 
 def set_turn():
     global turn
-    global round
+    global stage
     global set_a
 
     set_a = 1
@@ -239,7 +267,7 @@ def set_turn():
             print("Good bye.")
             sys.exit(0)
 
-        round += 1
+        stage += 1
         turn = 0
         dealer_action()
         round_end()
@@ -277,6 +305,8 @@ def round_end():
 
     shuffle()
 
+    origin_chips = chips.copy()
+
     idx = 0
     result = ''
     dealer = 0 if str(dealers_point).__eq__('bust') else dealers_point
@@ -296,6 +326,17 @@ def round_end():
             result += players[idx] + ' is lose '
             chips[idx] -= bet_chips[idx]
         idx += 1
+
+    for p in players:
+        if players.count(p) >= 2:
+            indices = [i for i, x in enumerate(players) if x == p]
+            chips[indices[1]] -= origin_chips[indices[0]]
+            chips[indices[0]] += chips[indices[1]]
+            del chips[indices[1]]
+            del players[indices[1]]
+            del player_hands[indices[1]]
+            del bet_chips[indices[1]]
+            del point_list[indices[1]]
 
     print(result)
     sleep(3)
