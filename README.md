@@ -12,3 +12,6 @@ Plz enjoy!
 
 ## Blackjack
 https://en.wikipedia.org/wiki/Blackjack
+
+## Baccarat
+https://en.wikipedia.org/wiki/Baccarat
