@@ -4,7 +4,7 @@ from time import sleep
 
 signs = ["H", "S", "C", "D"]
 cardNum = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
-deck = [[] for i in range(52)]
+deck = [[] for _ in range(52)]
 dummy = []
 players = []
 dealer = []
