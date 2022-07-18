@@ -1,4 +1,5 @@
 a = 'asd'
 b = 'ㅁㄴㅇ'
 
-print(a, b, len(a), len(b))
+print(a.find('a'))
+print(bool(a.find('q')))

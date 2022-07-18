@@ -32,9 +32,9 @@ def shuffle():
 
 def set_player():
     try:
-        num = int(input('Insert the number of players(2~7)\n> '))
+        num = int(input('Insert the number of players(1~7)\n> '))
 
-        if 2 > num or num > 7:
+        if 1 > num or num > 7:
             print("Too many players.")
             set_player()
             return
@@ -256,16 +256,6 @@ def set_turn():
 
     set_a = 1
     if turn == len(players) - 1:
-        cnt = 0
-        for i in bet_chips:
-            if i == 0:
-                cnt += 1
-        if cnt == len(players) - 1:
-            os.system('clear')
-            print("All players are lost their chips.")
-            print("The gamble is end.")
-            print("Good bye.")
-            sys.exit(0)
 
         stage += 1
         turn = 0
@@ -343,6 +333,20 @@ def round_end():
     for i in range(len(players)):
         bet_chips[i] = 0
         point_list[i] = 0
+
+    cnt = 0
+    for i in chips:
+
+        if i == 0:
+            cnt += 1
+    if cnt == len(players):
+        os.system('clear')
+        print("All players are lost their chips.")
+        print("The gamble is end.")
+        print("Good bye.")
+        sleep(.5)
+        sys.exit(0)
+
     start()
 
 

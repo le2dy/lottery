@@ -2,12 +2,6 @@ import os
 import random
 from time import sleep
 
-# EMPTY = '🞎'
-# BUY = '🞓'
-# HOUSE1 = '🞔'
-# HOUSE2 = '🞕'
-# HOUSE3 = '🞖'
-# BUILDING = '🞋'
 EMPTY = '\u25A1'
 BUY = '\u25A0'
 HOUSE1 = '\u25A3'
@@ -22,7 +16,8 @@ POWER = '\u26A1'
 JAIL = '\u27F0'
 PARKING = '\u26FE'
 POLICE = '\u260D'
-COMMON = '\u25EB'
+PUBLIC = '\u25EB'
+LUXURY = '\u0416'
 TAX = '$'
 board = []
 map_data = {}
@@ -31,20 +26,26 @@ players = []
 player_icon = ['\u25E7', '\u25E8', '\u25E9', '\u25EA']
 players_current_location = []
 players_account = []
-special_places = {0: 'Start', 2: 'Common', 4: 'Tax', 5: 'Honam Line', 7: 'Chance', 10: 'Jail', 20: 'Parking',
-                  30: 'Police'}
-lines = [['Start', 'Suwon', 'Common', 'YongIn', 'Tax', 'Honam Line', 'Gunsan', 'Chance', 'Iksan', 'Jeonju', 'Jail'],
-         ['Jail', 'Gyoengju', 'PowerPlant', 'Pohang', 'Daegu', 'GB Line', 'Changwon', 'Common', 'Ulsan', 'Busan',
+special_places = {0: 'Start', 2: 'Public', 4: 'Tax', 5: 'Honam Line', 7: 'Chance', 10: 'Jail', 12: 'PowerPlant',
+                  15: 'GB Line', 17: 'Public', 20: 'Parking', 22: 'Chance', 25: 'GU Line', 28: 'WaterPlant',
+                  30: 'Police', 33: 'Public', 35: 'Jungang Line', 36: 'Chance', 38: 'LuxuryTax'}
+lines = [['Start', 'Suwon', 'Public', 'YongIn', 'Tax', 'Honam Line', 'Gunsan', 'Chance', 'Iksan', 'Jeonju', 'Jail'],
+         ['Jail', 'Gyoengju', 'PowerPlant', 'Pohang', 'Daegu', 'GB Line', 'Changwon', 'Public', 'Ulsan', 'Busan',
           'Parking'],
          ['Parking', 'Jeju', 'Chance', 'Yeosu', 'Gwangju', 'GU Line', 'Chuncheon', 'Gangneung', 'WaterPlant', 'Wonju',
           'Police'],
-         ['Police', 'Cheongju', 'Cheonan', 'Common', 'Daejeon', 'Jungang Line', 'Chance', 'Incheon', 'LuxuryTax',
+         ['Police', 'Cheongju', 'Cheonan', 'Public', 'Daejeon', 'Jungang Line', 'Chance', 'Incheon', 'LuxuryTax',
           'Seoul', 'Start']]
 line_data = {}
-# key: city name, value:house;building;owner
-location_data = {}
-# key: city name, value: price
-chance_cards = []
+# key: city number, value:house;building;owner
+location_data = {4: 200, 5: 200, 15: 200, 25: 200, 35: 200, 38: 75}
+# key: city number, value: price
+chance_cards = ["To Suwon", 'To Start', 'To Chanwon', 'To Gyeongju', 'To Honam Line', "To nearest Line",
+                "To nearest Line", 'To nearest plant', '+150 from Bank', '+50 from Bank', '-15 to Bank',
+                '-100/B, -25/H to Bank', '-50 to other players', 'Move -3', 'To Jail', 'Free bail']
+public_cards = ['To Start', '+200 from Bank', '+100 from Bank', '+100 from Bank', '+50 from Bank', '+25 from Bank',
+                '+20 from Bank', '+10 from Bank', '+10 from Bank', '-150 to Bank', '-100 to Bank', '-50 to Bank',
+                '-115/B, -40/H to Bank', '+10 from Other players', "To Jail", "Free bail"]
 dices = [1, 1]
 turn = 0
 distance = 0
@@ -83,10 +84,10 @@ def set_map():
                 board[i] = POWER
             elif special_places[i].__eq__('WaterPlant'):
                 board[i] = WATER
-            elif special_places[i].__eq__('Line'):
+            elif special_places[i].find('Line') != -1:
                 board[i] = TRAIN
-            elif special_places[i].__eq__('Common'):
-                board[i] = COMMON
+            elif special_places[i].__eq__('Public'):
+                board[i] = PUBLIC
             elif special_places[i].__eq__('Jail'):
                 board[i] = JAIL
             elif special_places[i].__eq__('Police'):
@@ -95,6 +96,8 @@ def set_map():
                 board[i] = PARKING
             elif special_places[i].__eq__('Tax'):
                 board[i] = TAX
+            elif special_places[i].__eq__('LuxuryTax'):
+                board[i] = LUXURY
             else:
                 board[i] = START
         if i in players_current_location:
@@ -211,7 +214,7 @@ def show_line():
 
 
 def CLI():
-    cmd = input("Choose the option. (l: show line  r: roll the dices  m: move  b: build  d: done)\n> ")
+    cmd = input("Choose the option. (l: show line  r: roll the dices  m: move  b: build i: info d: done)\n> ")
 
     if cmd.__eq__('l'):
         show_line()
@@ -232,7 +235,19 @@ def CLI():
             CLI()
             return
         set_turn()
+    elif cmd.__eq__('i'):
+        info()
     CLI()
+
+
+def info():
+    os.system('clear')
+    set_map()
+    show_map()
+    print(START + " : Starting point", PUBLIC + " : Public fund", TAX + " : Tax", TRAIN + " : Train station",
+          CHANCE + " : Chance card", POLICE + " : Police office", JAIL + " : Jail", POWER + " : Power plant",
+          PARKING + " : Parking lot(free)",
+          WATER + " : Water plant", LUXURY + " : Luxury tax")
 
 
 def build():
@@ -261,11 +276,15 @@ def build():
 
 def move():
     global isMove
+    global isBuild
 
     isMove = True
     players_current_location[turn] += distance
     if players_current_location[turn] >= 40:
         players_current_location[turn] -= 39
+
+    if players_current_location[turn] in special_places.keys():
+        isBuild = True
 
     os.system('clear')
 
