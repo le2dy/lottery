@@ -14,6 +14,16 @@ HOUSE1 = '\u25A3'
 HOUSE2 = '\u25A6'
 HOUSE3 = '\u25A9'
 BUILDING = '\u25D9'
+START = '\u25B7'
+CHANCE = '\u26EF'
+TRAIN = '\u26B4'
+WATER = '\u26B6'
+POWER = '\u26A1'
+JAIL = '\u27F0'
+PARKING = '\u26FE'
+POLICE = '\u260D'
+COMMON = '\u25EB'
+TAX = '$'
 board = []
 map_data = {}
 map_temp = [[' ' for _ in range(11)] for _ in range(11)]
@@ -21,9 +31,20 @@ players = []
 player_icon = ['\u25E7', '\u25E8', '\u25E9', '\u25EA']
 players_current_location = []
 players_account = []
-special_places = {0: 'Start', 10: 'Jail', 20: '', 30: ''}
-lines = [['A', 'london', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k']]
+special_places = {0: 'Start', 2: 'Common', 4: 'Tax', 5: 'Honam Line', 7: 'Chance', 10: 'Jail', 20: 'Parking',
+                  30: 'Police'}
+lines = [['Start', 'Suwon', 'Common', 'YongIn', 'Tax', 'Honam Line', 'Gunsan', 'Chance', 'Iksan', 'Jeonju', 'Jail'],
+         ['Jail', 'Gyoengju', 'PowerPlant', 'Pohang', 'Daegu', 'GB Line', 'Changwon', 'Common', 'Ulsan', 'Busan',
+          'Parking'],
+         ['Parking', 'Jeju', 'Chance', 'Yeosu', 'Gwangju', 'GU Line', 'Chuncheon', 'Gangneung', 'WaterPlant', 'Wonju',
+          'Police'],
+         ['Police', 'Cheongju', 'Cheonan', 'Common', 'Daejeon', 'Jungang Line', 'Chance', 'Incheon', 'LuxuryTax',
+          'Seoul', 'Start']]
 line_data = {}
+# key: city name, value:house;building;owner
+location_data = {}
+# key: city name, value: price
+chance_cards = []
 dices = [1, 1]
 turn = 0
 distance = 0
@@ -53,9 +74,31 @@ def set_map():
         board.append(EMPTY)
         if i in map_data.keys():
             board[i] = map_data[i]
+        else:
+            map_data[i] = EMPTY
+        if i in special_places.keys():
+            if special_places[i].__eq__('Chance'):
+                board[i] = CHANCE
+            elif special_places[i].__eq__('PowerPlant'):
+                board[i] = POWER
+            elif special_places[i].__eq__('WaterPlant'):
+                board[i] = WATER
+            elif special_places[i].__eq__('Line'):
+                board[i] = TRAIN
+            elif special_places[i].__eq__('Common'):
+                board[i] = COMMON
+            elif special_places[i].__eq__('Jail'):
+                board[i] = JAIL
+            elif special_places[i].__eq__('Police'):
+                board[i] = POLICE
+            elif special_places[i].__eq__('Parking'):
+                board[i] = PARKING
+            elif special_places[i].__eq__('Tax'):
+                board[i] = TAX
+            else:
+                board[i] = START
         if i in players_current_location:
             board[i] = player_icon[players_current_location.index(i)]
-        line_data[i] = ''
 
 
 def show_map():
@@ -104,20 +147,22 @@ def set_player():
     for i in range(num):
         players.append(input("p" + str(i + 1) + " name: "))
         players_current_location.append(0)
-        players_account.append(1000)
+        players_account.append(1500)
 
 
 def roll_the_dice():
     global distance
     global isRoll
 
-    isRoll = True
     dices[0] = random.randint(1, 6)
     dices[1] = random.randint(1, 6)
 
     print(str(dices[0]) + " + " + str(dices[1]) + " = " + str(sum(dices)))
 
     distance = sum(dices)
+
+    if dices[0] != dices[1]:
+        isRoll = True
 
     CLI()
 
@@ -183,29 +228,35 @@ def CLI():
         if not isBuild:
             build()
     elif cmd.__eq__('d'):
+        if not isRoll:
+            CLI()
+            return
         set_turn()
-    else:
-        print("Yo")
+    CLI()
 
 
 def build():
     global isBuild
 
     isBuild = True
-    tile = board[players_current_location[turn]]
+    cur = players_current_location[turn]
+    tile = map_data[cur]
 
     if tile.__eq__(EMPTY):
-        map_data[players_current_location[turn]] = BUY
+        map_data[cur] = BUY
     elif tile.__eq__(BUY):
-        map_data[players_current_location[turn]] = HOUSE1
+        map_data[cur] = HOUSE1
     elif tile.__eq__(HOUSE1):
-        map_data[players_current_location[turn]] = HOUSE2
+        map_data[cur] = HOUSE2
     elif tile.__eq__(HOUSE2):
-        map_data[players_current_location[turn]] = HOUSE3
+        map_data[cur] = HOUSE3
     elif tile.__eq__(HOUSE3):
-        map_data[players_current_location[turn]] = BUILDING
+        map_data[cur] = BUILDING
     else:
         print("You can't do that.")
+        sleep(1)
+    print(map_data[cur])
+    start()
 
 
 def move():
@@ -215,6 +266,15 @@ def move():
     players_current_location[turn] += distance
     if players_current_location[turn] >= 40:
         players_current_location[turn] -= 39
+
+    os.system('clear')
+
+    set_map()
+    show_map()
+
+    loc = players_current_location[turn]
+    print("You're arrive at " + lines[int(loc / 10)][loc % 10])
+    CLI()
 
 
 def set_turn():
@@ -235,10 +295,9 @@ def set_turn():
 if __name__ == '__main__':
     set_player()
     start()
-
 '''
 ,__________,
-| City name|
+|   name   |
 |----------|
 |          |
 |          |
