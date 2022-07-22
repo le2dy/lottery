@@ -20,6 +20,10 @@ POLICE = '\u260D'
 PUBLIC = '\u25EB'
 LUXURY = '\u0416'
 TAX = '$'
+TO_START = 'To Start'
+FREE_BAIL = "Free bail"
+TO_BANK = ' to Bank'
+FROM_BANK = ' from Bank'
 board = []
 map_data = {}
 map_temp = [[' ' for _ in range(11)] for _ in range(11)]
@@ -41,14 +45,17 @@ lines = [['Start', 'Suwon', 'Public', 'YongIn', 'Tax', 'Honam Line', 'Gunsan', '
           'Seoul', 'Start']]
 line_data = {}
 # key: city number, value:house;building;owner
-location_data = {4: 200, 5: 200, 15: 200, 25: 200, 35: 200, 38: 75}
+location_data = {0: 0, 1: 60, 2: 0, 3: 60, 4: 200, 5: 200, 6: 100, 7: 0, 8: 100, 9: 120, 10: 0, 11: 140, 12: 150,
+                 13: 140, 14: 160, 15: 200, 16: 180, 17: 0, 18: 180, 19: 200, 20: 0, 21: 220, 22: 0, 23: 220, 24: 240,
+                 25: 200, 26: 260, 27: 260, 28: 150, 29: 280, 30: 0, 31: 300, 32: 300, 33: 0, 34: 320, 35: 200, 36: 0,
+                 37: 350, 38: 100, 39: 400}
 # key: city number, value: price
-chance_cards = ["To Suwon", 'To Start', 'To Changwon', 'To Gyeongju', 'To Honam Line', "To nearest Line",
+chance_cards = ["To Suwon", TO_START, 'To Changwon', 'To Gyeongju', 'To Honam Line', "To nearest Line",
                 "To nearest Line", 'To nearest plant', '+150 from Bank', '+50 from Bank', '-15 to Bank',
                 '-100/B, -25/H to Bank', '-50 to other players', 'Move -3', 'To Jail', 'Free bail']
-public_cards = ['To Start', '+200 from Bank', '+100 from Bank', '+100 from Bank', '+50 from Bank', '+25 from Bank',
+public_cards = [TO_START, '+200 from Bank', '+100 from Bank', '+100 from Bank', '+50 from Bank', '+25 from Bank',
                 '+20 from Bank', '+10 from Bank', '+10 from Bank', '-150 to Bank', '-100 to Bank', '-50 to Bank',
-                '-115/B, -40/H to Bank', '+10 from other players', "To Jail", "Free bail"]
+                '-115/B, -40/H to Bank', '+10 from other players', "To Jail", FREE_BAIL]
 dices = [1, 1]
 turn = 0
 distance = 0
@@ -74,6 +81,32 @@ class Color:
     END = '\033[0m'
 
 
+def set_icon(kind):
+    if kind.__eq__('Chance'):
+        icon = CHANCE
+    elif kind.__eq__('PowerPlant'):
+        icon = POWER
+    elif kind.__eq__('WaterPlant'):
+        icon = WATER
+    elif kind.find('Line') != -1:
+        icon = TRAIN
+    elif kind.__eq__('Public'):
+        icon = PUBLIC
+    elif kind.__eq__('Jail'):
+        icon = JAIL
+    elif kind.__eq__('Police'):
+        icon = POLICE
+    elif kind.__eq__('Parking'):
+        icon = PARKING
+    elif kind.__eq__('Tax'):
+        icon = TAX
+    elif kind.__eq__('LuxuryTax'):
+        icon = LUXURY
+    else:
+        icon = START
+    return icon
+
+
 def set_map():
     board.clear()
     for i in range(40):
@@ -83,43 +116,29 @@ def set_map():
         else:
             map_data[i] = EMPTY
         if i in special_places.keys():
-            if special_places[i].__eq__('Chance'):
-                board[i] = CHANCE
-            elif special_places[i].__eq__('PowerPlant'):
-                board[i] = POWER
-            elif special_places[i].__eq__('WaterPlant'):
-                board[i] = WATER
-            elif special_places[i].find('Line') != -1:
-                board[i] = TRAIN
-            elif special_places[i].__eq__('Public'):
-                board[i] = PUBLIC
-            elif special_places[i].__eq__('Jail'):
-                board[i] = JAIL
-            elif special_places[i].__eq__('Police'):
-                board[i] = POLICE
-            elif special_places[i].__eq__('Parking'):
-                board[i] = PARKING
-            elif special_places[i].__eq__('Tax'):
-                board[i] = TAX
-            elif special_places[i].__eq__('LuxuryTax'):
-                board[i] = LUXURY
-            else:
-                board[i] = START
+            board[i] = set_icon(special_places[i])
         if i in players_current_location:
             board[i] = player_icon[players_current_location.index(i)]
+
+
+def set_color(i, j):
+    col = ' '
+    if i == 0:
+        col = Color.BLUE + board[j] + Color.END
+    elif j == 10 and i != 0:
+        col = Color.RED + board[j + i] + Color.END
+    elif i == 10 and j != 10:
+        col = Color.GREEN + board[30 - j] + Color.END
+    elif j == 0 and i != 0 and i != 10:
+        col = Color.YELLOW + board[40 - i] + Color.END
+    return col
 
 
 def show_map():
     for i in range(11):
         for j in range(11):
-            if i == 0:
-                map_temp[i][j] = Color.BLUE + board[j] + Color.END
-            elif j == 10 and i != 0:
-                map_temp[i][j] = Color.RED + board[j + i] + Color.END
-            elif i == 10 and j != 10:
-                map_temp[i][j] = Color.GREEN + board[30 - j] + Color.END
-            elif j == 0 and i != 0 and i != 10:
-                map_temp[i][j] = Color.YELLOW + board[40 - i] + Color.END
+            map_temp[i][j] = set_color(i, j)
+
     map_temp[0][0] = Color.WHITE + board[0] + Color.END
     map_temp[0][10] = Color.WHITE + board[10] + Color.END
     map_temp[10][10] = Color.WHITE + board[20] + Color.END
@@ -163,7 +182,10 @@ def set_player():
 def roll_the_dice():
     global distance
     global isRoll
+    global isMove
     global crime_value
+
+    isMove = False
 
     dices[0] = random.randint(1, 6)
     dices[1] = random.randint(1, 6)
@@ -184,7 +206,7 @@ def roll_the_dice():
         players_inventory[turn].append('inJail')
         print("Your in Jail...")
 
-    CLI()
+    cli()
 
 
 def start():
@@ -195,7 +217,7 @@ def start():
 
     print(players[turn] + "'s turn.")
 
-    CLI()
+    cli()
 
 
 def show_line():
@@ -204,37 +226,81 @@ def show_line():
         if 4 < cmd or cmd < 1:
             print("Line " + str(cmd) + " doesn't exists.")
 
-        tile = ''',__________,
+        tile = ''',____________,
 |name|
-|----------|
-|          |
-|          |
-'__________'
+|------------|
+|building|
+|owner|
+'____________'
 '''
+        none = '            '
+
         os.system('clear')
         show_map()
 
-        length = int(len('          ') / 2)
+        length = int(len('            ') / 2)
         split_tile = tile.split("\n")
         for i in split_tile:
             tmp = ''
             for j in range(11):
                 l2 = length - int(len(lines[cmd - 1][j]) / 2)
                 name = ' ' * l2 + lines[cmd - 1][j] + ' ' * l2
-                tmp += i.replace('name', name[:10]) + ' '
+                if (cmd * 10 + j) in line_data:
+                    data = line_data[cmd * 10 + j].split(';')
+                    building = convert_text(data)
+                    owner = data[2]
+                else:
+                    building = none
+                    owner = none
+                tmp += i.replace('name', name[:12]).replace("building", building).replace("owner", owner) + ' '
             print(tmp)
-        CLI()
+        cli()
 
     except ValueError:
         print("Enter as number(1~4).")
         show_line()
 
 
-def CLI():
+def convert_text(data):
+    building = ''
+    one = '      @     '
+    two = '   @    @   '
+    three = '  @   @  @  '
+
+    if int(data[1]) == 1:
+        building = one.replace('@', Icon.BUILDING)
+    elif int(data[0]) == 1:
+        building = one.replace('@', Icon.BUILDING)
+    elif int(data[0]) == 2:
+        building = two.replace('@', Icon.BUILDING)
+    elif int(data[0]) == 3:
+        building = three.replace('@', Icon.BUILDING)
+
+    return building
+
+
+def check():
     if 'inJail' in players_inventory[turn]:
-        cmd = input("Choose the option. (l: show line  r: roll the dices  m: move  p: bail($50) i: info d: done)\n> ")
+        msg = "Choose the option. (l: show line  r: roll the dices  m: move  p: bail($50) i: info d: done)\n> "
+    elif players_current_location[turn] in special_places:
+        value = special_places[players_current_location[turn]]
+        if "Line" in value or "Plant" in value:
+            msg = "Choose the option. (l: show line  r: roll the dices  m: move  b: buy i: info d: done)\n> "
+        else:
+            msg = "Choose the option. (l: show line  r: roll the dices  m: move i: info d: done)\n> "
     else:
-        cmd = input("Choose the option. (l: show line  r: roll the dices  m: move  b: build i: info d: done)\n> ")
+        msg = "Choose the option. (l: show line  r: roll the dices  m: move  b: build i: info d: done)\n> "
+    return msg
+
+
+def cli():
+    global distance
+    global isRoll
+    global isBuild
+
+    msg = check()
+
+    cmd = input(msg)
 
     if cmd.__eq__('l'):
         show_line()
@@ -242,36 +308,53 @@ def CLI():
         if not isRoll:
             roll_the_dice()
     elif cmd.__eq__('m'):
-        if distance == 0:
-            CLI()
-            return
-        if not isMove:
-            if 'inJail' in players_inventory[turn] and (dices[0] != dices[1]):
-                print("You didn't success to escape.")
-                CLI()
-                return
-            move()
+        action_m()
     elif cmd.__eq__('b'):
-        if not isBuild:
-            build()
+        action_b()
     elif cmd.__eq__('d'):
         if not isRoll:
-            CLI()
+            start()
             return
         set_turn()
     elif cmd.__eq__('p') and 'inJail' in players_inventory[turn]:
-        if 'Free bail' in players_inventory[turn]:
-            free_bail = input("You have 'free bail' coupon.\nUse or not?\n> ")
-            if free_bail.__eq__('use') or free_bail.__eq__('y'):
-                players_inventory[turn].remove("Free bail")
-            else:
-                players_account[turn] -= 50
-        else:
-            players_account[turn] -= 50
+        bail()
         players_inventory[turn].remove('inJail')
     elif cmd.__eq__('i'):
         info()
-    CLI()
+    start()
+
+
+def action_m():
+    if distance == 0:
+        cli()
+        return
+    if not isMove:
+        if 'inJail' in players_inventory[turn] and (dices[0] != dices[1]):
+            print("You didn't success to escape.")
+            cli()
+            return
+        move()
+
+
+def action_b():
+    if players_current_location[turn] in special_places:
+        value = special_places[players_current_location[turn]]
+        if "Line" in value or "Plant" in value:
+            buy()
+    else:
+        if not isBuild:
+            build()
+
+
+def bail():
+    if 'Free bail' in players_inventory[turn]:
+        free_bail = input("You have 'free bail' coupon.\nUse or not?\n> ")
+        if free_bail.__eq__('use') or free_bail.__eq__('y'):
+            players_inventory[turn].remove(free_bail)
+        else:
+            players_account[turn] -= 50
+    else:
+        players_account[turn] -= 50
 
 
 def info():
@@ -284,30 +367,66 @@ def info():
           WATER + " : Water plant", LUXURY + " : Luxury tax")
 
 
+def buy():
+    loc = players_current_location[turn]
+    if players_account[turn] < location_data[loc]:
+        print("You don't have enough money.")
+        cli()
+    elif special_places[loc].endswith('Plant'):
+        line_data[loc] = '0;0;' + players[turn]
+        players_account[turn] -= location_data[loc]
+    elif special_places[loc].endswith('Line'):
+        line_data[loc] = '0;0;' + players[turn]
+        players_account[turn] -= location_data[loc]
+        trains = [special_places[5], special_places[15], special_places[25], special_places[35]]
+        indexes = [i for i, x in enumerate(trains) if x.__eq__('0;0;' + players[turn])]
+        for i in indexes:
+            location_data[5 * (int(i) + 1)] = 200 * len(indexes)
+
+
 def build():
     global isBuild
 
     if 'inJail' in players_inventory[turn]:
         print("You can't do that.")
-
+    # key: city number, value:house;building;owner
     isBuild = True
     cur = players_current_location[turn]
     tile = map_data[cur]
 
-    if tile.__eq__(EMPTY):
-        map_data[cur] = BUY
-    elif tile.__eq__(BUY):
-        map_data[cur] = HOUSE1
-    elif tile.__eq__(HOUSE1):
-        map_data[cur] = HOUSE2
-    elif tile.__eq__(HOUSE2):
-        map_data[cur] = HOUSE3
-    elif tile.__eq__(HOUSE3):
-        map_data[cur] = BUILDING
+    print("Account: " + str(players_account[turn]), "Cost: " + str(location_data[cur]))
+    yn = input("Are you sure?(Y/N)\n> ")
+
+    if yn.lower().__eq__('y'):
+        if tile.__eq__(EMPTY):
+            map_data[cur] = BUY
+            line_data[cur] = '0;0;' + players[turn]
+            players_account[turn] -= location_data[cur]
+        elif tile.__eq__(BUY):
+            map_data[cur] = HOUSE1
+            line_data[cur] = '1;0;' + players[turn]
+            location_data[cur] += 50
+            players_account[turn] -= 50
+        elif tile.__eq__(HOUSE1):
+            map_data[cur] = HOUSE2
+            line_data[cur] = '2;0;' + players[turn]
+            location_data[cur] += 100
+            players_account[turn] -= 100
+        elif tile.__eq__(HOUSE2):
+            map_data[cur] = HOUSE3
+            line_data[cur] = '3;0;' + players[turn]
+            location_data[cur] += 150
+            players_account[turn] -= 150
+        elif tile.__eq__(HOUSE3):
+            map_data[cur] = BUILDING
+            line_data[cur] = '0;1;' + players[turn]
+            location_data[cur] += 250
+            players_account[turn] -= 250
+        else:
+            print("You can't do that.")
+            sleep(1)
     else:
-        print("You can't do that.")
-        sleep(1)
-    print(map_data[cur])
+        start()
     start()
 
 
@@ -339,7 +458,8 @@ def move():
 
     loc = players_current_location[turn]
     print("You're arrive at " + lines[int(loc / 10)][loc % 10])
-    CLI()
+    print('Account: ' + str(players_account[turn]))
+    cli()
 
 
 def set_turn():
@@ -361,86 +481,90 @@ def chance():
     global distance
     card = chance_cards.pop()
 
-    if card.__eq__('To Start'):
+    if card.__eq__(TO_START):
         distance = 40 - players_current_location[turn]
         move()
     elif card.__eq__('To Jail'):
         players_inventory[turn].append('inJail')
         players_current_location[turn] = 10
     elif "from Bank" in card:
-        players_account[turn] += int(card.replace(' from Bank', ''))
+        players_account[turn] += int(card.replace(FROM_BANK, ''))
     elif 'to Bank' in card:
-        if '/' not in card:
-            players_account[turn] += int(card.replace(' to Bank', ''))
-        else:
-            con = re.sub('/.', '', card).replace(' to Bank', '').split(', ')
-            h = int(con[0]) * players_building[turn][0]
-            b = int(con[1]) * players_building[turn][1]
-            players_account[turn] += (h + b)
+        bank(card)
     elif 'to other' in card:
         for i in range(len(players)):
             if i != turn:
                 players_account[i] += 50
                 players_account[turn] -= 50
-    elif card.__eq__("Free bail"):
-        players_inventory[turn].append("Free bail")
+    elif card.__eq__(FREE_BAIL):
+        players_inventory[turn].append(FREE_BAIL)
     elif card.__eq__('Move -3'):
         distance = -3
         move()
     else:
-        dist = 0
-        if card.endswith('Suwon'):
-            dist = 1
-        elif card.endswith('Changwon'):
-            dist = 16
-        elif card.endswith('Gyeongju'):
-            dist = 11
-        elif card.endswith("Honam Line"):
-            dist = 5
-        elif 'nearest' in card:
-            d = []
-            if card.endswith("Line"):
-                d = [5, 15, 25, 35]
-            else:
-                d = [12, 28]
-            d.append(players_current_location[turn])
-            d.sort()
-            a = d[d.index(players_current_location[turn]) - 1]
-            b = d[d.index(players_current_location[turn]) + 1]
-            if a > b:
-                dist = a
-            elif a < b:
-                dist = b
-            else:
-                dist = b
+        dist = trip(card)
         if players_current_location[turn] > dist:
             players_account[turn] += 200
         players_current_location[turn] = dist
     chance_cards.append(card)
 
 
+def trip(card):
+    dist = 0
+    if card.endswith('Suwon'):
+        dist = 1
+    elif card.endswith('Changwon'):
+        dist = 16
+    elif card.endswith('Gyeongju'):
+        dist = 11
+    elif card.endswith("Honam Line"):
+        dist = 5
+    elif 'nearest' in card:
+        if card.endswith("Line"):
+            d = [5, 15, 25, 35]
+        else:
+            d = [12, 28]
+        d.append(players_current_location[turn])
+        d.sort()
+        a = d[d.index(players_current_location[turn]) - 1]
+        b = d[d.index(players_current_location[turn]) + 1]
+        if a > b:
+            dist = a
+        elif a < b:
+            dist = b
+        else:
+            dist = b
+    return dist
+
+
 def public():
     global distance
     card = public_cards.pop()
 
-    if card.__eq__('To Start'):
+    if card.__eq__(TO_START):
         distance = 40 - players_current_location[turn]
         move()
-    elif card.endswith(' from Bank'):
-        players_account[turn] += int(card.replace(' from Bank', ''))
-    elif card.endswith(' to Bank'):
-        if '/' not in card:
-            players_account[turn] += int(card.replace(' to Bank', ''))
-        else:
-            con = re.sub('/.', '', card).replace(' to Bank', '').split(', ')
-            h = int(con[0]) * players_building[turn][0]
-            b = int(con[1]) * players_building[turn][1]
-            players_account[turn] += (h + b)
+    elif card.endswith(FROM_BANK):
+        players_account[turn] += int(card.replace(FROM_BANK, ''))
+    elif card.endswith(TO_BANK):
+        bank(card)
+
     else:
         for i in range(len(players)):
             if i != turn:
                 players_account[turn] += 10
                 players_account[i] -= 10
+    public_cards.append(card)
+
+
+def bank(card):
+    if '/' not in card:
+        players_account[turn] += int(card.replace(TO_BANK, ''))
+    else:
+        con = re.sub('/.', '', card).replace(TO_BANK, '').split(', ')
+        h = int(con[0]) * players_building[turn][0]
+        b = int(con[1]) * players_building[turn][1]
+        players_account[turn] += (h + b)
 
 
 if __name__ == '__main__':
@@ -448,11 +572,3 @@ if __name__ == '__main__':
     random.shuffle(chance_cards)
     random.shuffle(public_cards)
     start()
-'''
-,__________,
-|   name   |
-|----------|
-|          |
-|          |
-'__________'
-'''
