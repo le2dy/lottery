@@ -51,7 +51,7 @@ class SSHManager:
 class Handler(FileSystemEventHandler):
     def on_created(self, event):
         self.ui.log_text.append('Directory created: ' + event.src_path)
-        self.ssh_manager.send_file(event.src_path, '/home/msol1/문서/wisenic_machine_data')
+        self.ssh_manager.send_file(event.src_path, file_path)  # replace file_path to actual file path.
 
 
 class MainWindow(QMainWindow):
