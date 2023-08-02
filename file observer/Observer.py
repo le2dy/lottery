@@ -3,6 +3,7 @@ import time
 import paramiko
 from scp import SCPClient, SCPException
 from PyQt5.QtWidgets import *
+from PyQt5.QtGui import QIcon
 from PyQt5 import uic
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -68,6 +69,39 @@ class MainWindow(QMainWindow):
         self.ui = uic.loadUi("IP_insert.ui", self)
         self.ssh_manager = None
         self.ipCheck()
+        self.setup_system_tray()
+
+    def setup_system_tray(self):
+        # Create a system tray icon
+        self.tray_icon = QSystemTrayIcon(QIcon("Observe.ico"), self)
+
+        # Create a context menu for the tray icon
+        self.tray_menu = QMenu(self)
+
+        # Add an action to show/hide the main window when tray icon is clicked
+        show_hide_action = self.tray_menu.addAction("Show/Hide")
+        show_hide_action.triggered.connect(self.toggle_main_window)
+
+        # Add an action to quit the application when clicked on the tray icon
+        quit_action = self.tray_menu.addAction("Quit")
+        quit_action.triggered.connect(self.quit_application)
+
+        # Set the context menu for the tray icon
+        self.tray_icon.setContextMenu(self.tray_menu)
+
+        # Show the tray icon
+        self.tray_icon.show()
+
+    def toggle_main_window(self):
+        if self.isVisible():
+            self.hide()
+        else:
+            self.show()
+    
+    def quit_application(self):
+        # Perform any cleanup or saving before quitting (if necessary)
+        self.tray_icon.hide()
+        QApplication.quit()
 
     def ipCheck(self):
         self.ssh_manager = SSHManager()
