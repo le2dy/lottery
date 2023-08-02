@@ -58,7 +58,7 @@ class Handler(FileSystemEventHandler):
 
     def on_created(self, event):
         self.ui.log_text.appendPlainText('Directory created: ' + event.src_path)
-        self.ssh_manager.send_file(event.src_path, 'file_path')  # replace file_path to actual file path.
+        self.ssh_manager.send_file(event.src_path, '/home/msol1/문서/wisenic_machine_data')  # replace file_path to actual file path.
 
 
 class MainWindow(QMainWindow):
@@ -67,6 +67,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.ui = uic.loadUi("IP_insert.ui", self)
         self.ssh_manager = None
+        self.ipCheck()
 
     def ipCheck(self):
         self.ssh_manager = SSHManager()
