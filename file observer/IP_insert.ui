@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>../../../../../Documents/연차/테스트/Observe.ico</normaloff>../../../../../Documents/연차/테스트/Observe.ico</iconset>
+    <normaloff>Observe.ico</normaloff>Observe.ico</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QTabWidget" name="tabWidget">
