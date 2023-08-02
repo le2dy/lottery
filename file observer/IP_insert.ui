@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Communicator</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>../../../../../Documents/연차/테스트/Observe.ico</normaloff>../../../../../Documents/연차/테스트/Observe.ico</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QTabWidget" name="tabWidget">
     <property name="geometry">
@@ -249,7 +253,7 @@
      <x>0</x>
      <y>0</y>
      <width>527</width>
-     <height>21</height>
+     <height>32</height>
     </rect>
    </property>
   </widget>
