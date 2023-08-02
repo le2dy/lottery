@@ -49,34 +49,43 @@ class SSHManager:
         return stdout.readlines()
 
 class Handler(FileSystemEventHandler):
+    def __init__(self, ssh_manager) :
+        self.ssh_manager = ssh_manager
+        self.ui = None
+
+    def set_ui(self, ui):
+        self.ui = ui
+
     def on_created(self, event):
-        self.ui.log_text.append('Directory created: ' + event.src_path)
-        self.ssh_manager.send_file(event.src_path, file_path)  # replace file_path to actual file path.
+        self.ui.log_text.appendPlainText('Directory created: ' + event.src_path)
+        self.ssh_manager.send_file(event.src_path, 'file_path')  # replace file_path to actual file path.
 
 
 class MainWindow(QMainWindow):
-    global ssh_manager
+
     def __init__(self):
         super().__init__()
         self.ui = uic.loadUi("IP_insert.ui", self)
+        self.ssh_manager = None
 
     def ipCheck(self):
-        ssh_manager = SSHManager()
+        self.ssh_manager = SSHManager()
         [IP, PORT] = self.ui.IP_input.text().split(':')
         USER = self.ui.user.text()
         PWD = self.ui.pwd.text()
         PORT = 22 if PORT == None else PORT
         try:
-            ssh_manager.create_ssh_client(IP, USER, PWD, PORT)
+            self.ssh_manager.create_ssh_client(IP, USER, PWD, PORT)
         except Exception:
             self.ui.status_label.setText("연결 실패")
             self.ui.status_label.setStyleSheet("Color : red")
             return
-        self.ui.status_label.setText(ssh_manager.msg)
-        if ssh_manager.connect_status:
+        self.ui.status_label.setText(self.ssh_manager.msg)
+        if self.ssh_manager.connect_status:
             self.ui.status_label.setStyleSheet("Color : green")
         else:
             self.ui.status_label.setStyleSheet("Color : red")
+        self.ui.log_text.setPlainText('')
         time.sleep(.5)
         self.changeUI()
 
@@ -91,12 +100,13 @@ class MainWindow(QMainWindow):
     def filePath(self):
         fpath = QFileDialog.getExistingDirectory(self, "Open path", './')
         self.ui.file_path.setText(fpath)
-        self.ui.log_text.setText('')
+        self.ui.log_text.setPlainText('')
         self.activateObserver()
 
     def activateObserver(self):
         path_to_monitor = self.ui.file_path.text()  # Change this to the directory you want to monitor
-        event_handler = Handler()
+        event_handler = Handler(self.ssh_manager)
+        event_handler.set_ui(self.ui)
         observer = Observer()
         observer.schedule(event_handler, path=path_to_monitor, recursive=True)
         observer.start()
