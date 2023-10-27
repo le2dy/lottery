@@ -40,11 +40,10 @@ class SSHManager:
                     timeout=2,
                 )
             except Exception as e:
-                print(e.errno)
                 logger.error(e)
                 self.ssh_client = None
                 self.retry_counter = self.retry_counter + 1
-                print("Retry count {}".format(self.retry_counter))
+                logger.debug("Retry count {}".format(self.retry_counter))
                 if e.errno:
                     time.sleep(2)
                 self.create_ssh_client(hostname, username, password, port)
@@ -164,20 +163,11 @@ class MainWindow(QMainWindow):
         PWD = self.ui.pwd.text()
         PORT = 22 if PORT == None else PORT
 
-        def reConnect(ssh_manager):
-            self.ui.status_label.setText("연결 재시도...")
-            counter = 0
-            while counter < 10:
-                ssh_manager.create_ssh_client(IP, USER, PWD, PORT)
-                time.sleep(1)
-                counter = counter + 1
-
         try:
             self.ssh_manager.create_ssh_client(IP, USER, PWD, PORT)
         except:
             self.ui.status_label.setText("연결 실패")
             self.ui.status_label.setStyleSheet("Color : red")
-            reConnect(self.ssh_manager)
             return
         self.ui.status_label.setText(self.ssh_manager.msg)
         if self.ssh_manager.connect_status:
